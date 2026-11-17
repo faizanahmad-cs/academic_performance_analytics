@@ -1,0 +1,83 @@
+/* Styling for Academic Performance Analytics System - AMU MCA */
+:root {
+    --amu-green: #0b5e36;
+    --amu-dark: #073b22;
+    --amu-gold: #c59b27;
+    --amu-light: #f4fbf7;
+    --risk-low: #28a745;
+    --risk-med: #ffc107;
+    --risk-high: #dc3545;
+}
+
+.main-header {
+    background: linear-gradient(135deg, #073b22 0%, #0b5e36 60%, #157347 100%);
+    padding: 24px;
+    border-radius: 12px;
+    color: white;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.main-header h1 {
+    color: #ffffff !important;
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.main-header p {
+    color: #e0f2e9;
+    font-size: 14px;
+    margin: 0;
+}
+
+.kpi-card {
+    background: white;
+    padding: 18px 20px;
+    border-radius: 10px;
+    border-left: 5px solid #0b5e36;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    text-align: center;
+}
+
+.kpi-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.kpi-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #212529;
+    margin-top: 6px;
+}
+
+.risk-badge-low {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.risk-badge-medium {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.risk-badge-high {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-block;
+}
