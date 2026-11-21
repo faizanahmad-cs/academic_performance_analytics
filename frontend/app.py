@@ -218,7 +218,7 @@ with st.sidebar:
         st.session_state.user_id = 1
     elif "Faculty" in role_choice:
         st.session_state.user_role = "Faculty"
-        st.session_state.user_name = "Dr. A. K. Sharma"
+        st.session_state.user_name = "Dr. Faisal Anwer"
         st.session_state.user_id = 2
         st.session_state.profile_id = 1
     else:
@@ -440,17 +440,51 @@ if st.session_state.user_role == "HOD":
             
             if records_data:
                 df_corr = pd.DataFrame(records_data)
+                
+                # Statistical metrics
+                corr_val = df_corr["Attendance"].corr(df_corr["Average_Marks"])
+                below_75_cnt = len(df_corr[df_corr["Attendance"] < 75.0])
+                
+                c_m1, c_m2, c_m3 = st.columns(3)
+                with c_m1:
+                    st.metric("Pearson Correlation (r)", f"{corr_val:.2f}", "Positive Correlation" if corr_val > 0 else "Negative")
+                with c_m2:
+                    st.metric("Students < 75% Attendance", f"{below_75_cnt} / {len(df_corr)}", "Exam Ineligible" if below_75_cnt > 0 else "All Eligible", delta_color="inverse")
+                with c_m3:
+                    st.metric("Cohort Attendance Average", f"{df_corr['Attendance'].mean():.1f}%")
+
                 fig_scatter = px.scatter(
                     df_corr,
                     x="Attendance",
                     y="Average_Marks",
                     color="Risk",
                     hover_name="Name",
-                    title="Attendance % vs Average Academic Marks (Correlation Analysis)",
+                    title="Attendance % vs Average Academic Marks (Correlation & Trendline)",
                     labels={"Attendance": "Attendance Percentage (%)", "Average_Marks": "Average Marks (%)"},
-                    color_discrete_map={"Low": "#28a745", "Medium": "#ffc107", "High": "#dc3545"},
-                    trendline="ols"
+                    color_discrete_map={"Low": "#28a745", "Medium": "#ffc107", "High": "#dc3545"}
                 )
+                
+                # Add numpy-based Ordinary Least Squares (OLS) trendline without requiring statsmodels
+                try:
+                    import numpy as np
+                    if len(df_corr) > 1:
+                        # Filter valid numbers
+                        valid_df = df_corr.dropna(subset=["Attendance", "Average_Marks"])
+                        x_pts = valid_df["Attendance"].to_numpy()
+                        y_pts = valid_df["Average_Marks"].to_numpy()
+                        slope, intercept = np.polyfit(x_pts, y_pts, 1)
+                        x_line = np.linspace(x_pts.min(), x_pts.max(), 50)
+                        y_line = slope * x_line + intercept
+                        fig_scatter.add_trace(go.Scatter(
+                            x=x_line,
+                            y=y_line,
+                            mode="lines",
+                            name=f"OLS Trend (slope = {slope:.2f})",
+                            line=dict(color="#111111", width=2, dash="dash")
+                        ))
+                except Exception:
+                    pass
+
                 # Add mandatory 75% attendance threshold line
                 fig_scatter.add_vline(x=75, line_dash="dash", line_color="red", annotation_text="AMU 75% Rule")
                 st.plotly_chart(fig_scatter, use_container_width=True)
@@ -594,16 +628,84 @@ elif st.session_state.user_role == "Faculty":
 
     elif menu == "📥 View Student Submissions":
         st.markdown("## 📥 Student Coding Submissions")
-        # Submissions view
+        st.write("Review student code submissions, test case validation results, and programming assessment scores.")
+
         assigns = api_get("assignments") or []
-        if assigns:
-            assign_choice = st.selectbox("Select Assignment:", [a["id"] for a in assigns], format_func=lambda x: next(a["title"] for a in assigns if a["id"] == x))
-            subs = api_get("submissions", params={"assignment_id": assign_choice}) or []
-            if subs:
-                df_subs = pd.DataFrame(subs)
-                st.dataframe(df_subs[["id", "student_name", "score", "status", "language", "submitted_at"]], use_container_width=True)
-            else:
-                st.info("No submissions yet for this assignment.")
+        students = api_get("students") or []
+
+        c_filter1, c_filter2 = st.columns(2)
+        with c_filter1:
+            assign_options = [0] + [a["id"] for a in assigns]
+            assign_choice = st.selectbox(
+                "Select Coding Assessment:",
+                assign_options,
+                format_func=lambda x: "All Coding Assessments" if x == 0 else next(a["title"] for a in assigns if a["id"] == x)
+            )
+
+        with c_filter2:
+            student_options = [0] + [s["id"] for s in students]
+            student_choice = st.selectbox(
+                "Select Student:",
+                student_options,
+                format_func=lambda x: "All Students" if x == 0 else f"{next(s['name'] for s in students if s['id'] == x)} ({next(s['enrollment_no'] for s in students if s['id'] == x)})"
+            )
+
+        # Build query parameters
+        params = {}
+        if assign_choice != 0:
+            params["assignment_id"] = assign_choice
+        if student_choice != 0:
+            params["student_id"] = student_choice
+
+        subs = api_get("submissions", params=params) or []
+
+        if subs:
+            # Summary metrics
+            m_s1, m_s2, m_s3 = st.columns(3)
+            with m_s1:
+                st.metric("Total Submissions", len(subs))
+            with m_s2:
+                avg_sub_score = sum(s.get("score", 0.0) for s in subs) / len(subs) if subs else 0.0
+                st.metric("Average Score", f"{avg_sub_score:.1f}%")
+            with m_s3:
+                accepted_count = sum(1 for s in subs if s.get("status") == "Accepted" or s.get("score") == 100.0)
+                st.metric("Fully Accepted", f"{accepted_count} / {len(subs)}")
+
+            # Display table
+            df_subs = pd.DataFrame(subs)
+            display_cols = ["id", "student_name", "assignment_title", "language", "score", "status", "submitted_at"]
+            available_cols = [c for c in display_cols if c in df_subs.columns]
+            st.dataframe(df_subs[available_cols], use_container_width=True, hide_index=True)
+
+            # Code Drill-down inspector
+            st.markdown("### 🔍 Inspect Submitted Code & Evaluation Details")
+            sub_map = {s["id"]: f"Submission #{s['id']} - {s.get('student_name', 'Student')} - {s.get('assignment_title', 'Assignment')} ({s.get('status', 'Pending')})" for s in subs}
+            selected_sub_id = st.selectbox("Select Submission to Inspect:", list(sub_map.keys()), format_func=lambda x: sub_map[x])
+            
+            selected_sub = next((s for s in subs if s["id"] == selected_sub_id), None)
+            if selected_sub:
+                c_info1, c_info2 = st.columns(2)
+                with c_info1:
+                    st.markdown(f"**Student:** {selected_sub.get('student_name', 'N/A')}")
+                    st.markdown(f"**Assessment:** {selected_sub.get('assignment_title', 'N/A')}")
+                    st.markdown(f"**Submitted At:** {selected_sub.get('submitted_at', 'N/A')}")
+                with c_info2:
+                    st.markdown(f"**Language:** `{selected_sub.get('language', 'python')}`")
+                    st_badge = "risk-badge-low" if selected_sub.get("status") == "Accepted" else "risk-badge-medium"
+                    st.markdown(f"**Status:** <span class='{st_badge}'>{selected_sub.get('status', 'Pending')} ({selected_sub.get('score', 0.0)}%)</span>", unsafe_allow_html=True)
+
+                st.markdown("**Submitted Source Code:**")
+                st.code(selected_sub.get("code") or "# No source code recorded", language=selected_sub.get("language", "python"))
+
+                if selected_sub.get("execution_details"):
+                    st.markdown("**Test Case Evaluation Details:**")
+                    try:
+                        exec_data = json.loads(selected_sub["execution_details"]) if isinstance(selected_sub["execution_details"], str) else selected_sub["execution_details"]
+                        st.json(exec_data)
+                    except Exception:
+                        st.write(selected_sub["execution_details"])
+        else:
+            st.info("No submissions found matching the selected filters.")
 
     elif menu == "🏆 Coding Leaderboard":
         st.markdown("## 🏆 Live Departmental Coding Leaderboard")
