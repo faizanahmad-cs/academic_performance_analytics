@@ -108,7 +108,7 @@ python run_system.py
 | Role | Name | Email / ID | Password | Access / Permissions |
 |---|---|---|---|---|
 | **HOD** | Prof. HOD (Computer Science) | `hod@amu.ac.in` | `hod123` | Department KPI Cards, Subject Averages, Risk Distribution, Consolidated Reports, Class CSV Export. |
-| **Faculty** | Dr. A. K. Sharma | `faculty.cpp@amu.ac.in` | `faculty123` | Add/Update Marks, Update Attendance %, Create Coding Assignments, View Submissions. |
+| **Faculty** | Dr. Faisal Anwer | `faisal.anwer@amu.ac.in` | `faculty123` | Add/Update Marks, Update Attendance %, Create Coding Assignments, View Submissions. |
 | **Faculty** | Dr. M. Qasim | `faculty.dbms@amu.ac.in` | `faculty123` | DBMS Marks & Attendance management. |
 | **Student** | FAIZAN AHMAD | `faizanahmad87635@gmail.com` (or `GR0622`) | `student123` | View Marks (Sem 1 & 2), Attendance %, Risk Prediction, Online Judge Code Submission. |
 | **Student** | Any from CSV (Sumit, Adeeba, etc.) | `{enrollment_no}@myamu.ac.in` | `student123` | View individual academic records. |
