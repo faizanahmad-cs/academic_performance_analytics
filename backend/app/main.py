@@ -266,14 +266,47 @@ def submit_code(
     return {
         "id": submission.id,
         "assignment_id": submission.assignment_id,
+        "assignment_title": assignment.title,
         "student_id": submission.student_id,
         "student_name": student.name,
+        "code": submission.code,
         "language": submission.language,
         "score": submission.score,
         "status": submission.status,
         "execution_details": submission.execution_details,
         "submitted_at": submission.submitted_at
     }
+
+
+@app.get(f"{settings.API_V1_STR}/submissions", response_model=List[SubmissionResponse])
+def get_submissions(
+    assignment_id: Optional[int] = None,
+    student_id: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Submission)
+    if assignment_id:
+        query = query.filter(Submission.assignment_id == assignment_id)
+    if student_id:
+        query = query.filter(Submission.student_id == student_id)
+    
+    subs = query.order_by(Submission.submitted_at.desc()).all()
+    result = []
+    for s in subs:
+        result.append({
+            "id": s.id,
+            "assignment_id": s.assignment_id,
+            "assignment_title": s.assignment.title if s.assignment else "Assignment",
+            "student_id": s.student_id,
+            "student_name": s.student.name if s.student else "Student",
+            "code": s.code,
+            "language": s.language,
+            "score": s.score,
+            "status": s.status,
+            "execution_details": s.execution_details,
+            "submitted_at": s.submitted_at
+        })
+    return result
 
 
 @app.get(f"{settings.API_V1_STR}/leaderboard", response_model=List[LeaderboardEntry])
