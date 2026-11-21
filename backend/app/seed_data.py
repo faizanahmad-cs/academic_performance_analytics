@@ -43,7 +43,7 @@ def seed_database():
 
     # 2. Create Faculty Users & Profiles
     faculty_profiles = [
-        {"name": "Dr. A. K. Sharma", "email": "faculty.cpp@amu.ac.in"},
+        {"name": "Dr. Faisal Anwer", "email": "faisal.anwer@amu.ac.in"},
         {"name": "Dr. M. Qasim", "email": "faculty.dbms@amu.ac.in"},
         {"name": "Dr. S. Rehan", "email": "faculty.java@amu.ac.in"},
         {"name": "Dr. Farhan Khan", "email": "faculty.web@amu.ac.in"}
@@ -269,12 +269,12 @@ def seed_database():
     db.add(assign2)
     db.flush()
 
-    # 6. Create Sample Submissions for Leaderboard (FR-007, FR-008)
-    first_few_students = db.query(Student).limit(8).all()
-    sample_scores = [100.0, 100.0, 100.0, 66.7, 100.0, 33.3, 100.0, 66.7]
+    # 6. Create Sample Submissions for Leaderboard & View Submissions (FR-007, FR-008)
+    first_few_students = db.query(Student).limit(10).all()
+    sample_scores = [100.0, 100.0, 100.0, 66.7, 100.0, 33.3, 100.0, 66.7, 100.0, 100.0]
     for idx, st in enumerate(first_few_students):
         score = sample_scores[idx % len(sample_scores)]
-        sub = Submission(
+        sub1 = Submission(
             assignment_id=assign1.id,
             student_id=st.id,
             code="nums = list(map(int, input().split()))\nprint(sum(nums))",
@@ -284,7 +284,21 @@ def seed_database():
             execution_details=json.dumps({"passed": int(score / 33.3), "total": 3}),
             submitted_at=datetime.utcnow()
         )
-        db.add(sub)
+        db.add(sub1)
+
+        # Also add submission for assign2 (Palindrome String Verification)
+        score2 = 100.0 if idx % 2 == 0 else 66.7
+        sub2 = Submission(
+            assignment_id=assign2.id,
+            student_id=st.id,
+            code="s = input().strip()\nif s.lower() == s.lower()[::-1]:\n    print('YES')\nelse:\n    print('NO')",
+            language="python",
+            score=score2,
+            status="Accepted" if score2 == 100.0 else "Partially Accepted",
+            execution_details=json.dumps({"passed": 3 if score2 == 100.0 else 2, "total": 3}),
+            submitted_at=datetime.utcnow()
+        )
+        db.add(sub2)
 
     db.commit()
     print(f"Database successfully populated with {student_count} students, marks, attendance, and assignments!")
