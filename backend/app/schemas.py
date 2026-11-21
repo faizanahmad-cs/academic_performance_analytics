@@ -151,8 +151,10 @@ class SubmissionCreate(BaseModel):
 class SubmissionResponse(BaseModel):
     id: int
     assignment_id: int
+    assignment_title: Optional[str] = None
     student_id: int
     student_name: Optional[str] = None
+    code: Optional[str] = None
     language: str
     score: float
     status: str
